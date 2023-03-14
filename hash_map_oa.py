@@ -86,71 +86,149 @@ class HashMap:
     # ------------------------------------------------------------------ #
 
     def put(self, key: str, value: object) -> None:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        if self.table_load() >= 0.5: 
+            new_capacity = self._next_prime(self._capacity * 2)
+            self.resize_table(new_capacity)
+        
+        hash = self._hash_function(key)
+        index = hash % self._capacity
+        new_index = index
+        quadratic_factor = 1
+
+        data_at_index = self._buckets.get_at_index(index)
+
+        while data_at_index and (data_at_index is not None or data_at_index.is_tombstone == False):
+            if data_at_index.key == key:
+                data_at_index.value = value
+                return
+            else:
+                new_index = (index + quadratic_factor**2) % self._capacity
+                quadratic_factor += 1
+                data_at_index = self._buckets.get_at_index(new_index)
+
+        self._buckets.set_at_index(new_index, HashEntry(key, value))
+        self._size += 1
+
 
     def table_load(self) -> float:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        load_factor = float(self._size / self._capacity)
+        return load_factor
 
     def empty_buckets(self) -> int:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        count = 0
+        for number in range(self._buckets.length()):
+            if self._buckets.get_at_index(number) == None:
+                count += 1
+        
+        return count
 
     def resize_table(self, new_capacity: int) -> None:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        if new_capacity < self._size:
+            return
+        
+        new_map = HashMap(new_capacity, self._hash_function)
+
+        for number in range(self._buckets.length()):
+            if self._buckets.get_at_index(number) and self._buckets.get_at_index(number).is_tombstone == False:
+                new_map.put(self._buckets.get_at_index(number).key, self._buckets.get_at_index(number).value)
+        
+        self._buckets = new_map._buckets
+        self._capacity = new_map._capacity
+        self._size = new_map._size
 
     def get(self, key: str) -> object:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        hash = self._hash_function(key)
+        index = hash % self._capacity
+        new_index = index
+        quadratic_factor = 1
+
+        data_at_index = self._buckets.get_at_index(index)
+
+        while data_at_index is not None:
+            if data_at_index.key == key and data_at_index.is_tombstone == False:
+                return data_at_index.value
+            elif data_at_index.key == key and data_at_index.is_tombstone == True:
+                return None
+            else:
+                new_index = (index + quadratic_factor**2) % self._capacity
+                quadratic_factor += 1
+                data_at_index = self._buckets.get_at_index(new_index)
+
+        return None
 
     def contains_key(self, key: str) -> bool:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        if self._size == 0:
+            return False
+        
+        hash = self._hash_function(key)
+        index = hash % self._capacity
+        new_index = index
+        quadratic_factor = 1
+
+        data_at_index = self._buckets.get_at_index(index)
+
+        while data_at_index is not None:
+            if data_at_index.key == key and data_at_index.is_tombstone == False:
+                return True
+            else:
+                new_index = (index + quadratic_factor**2) % self._capacity
+                quadratic_factor += 1
+                data_at_index = self._buckets.get_at_index(new_index)
+
+        return False
 
     def remove(self, key: str) -> None:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        hash = self._hash_function(key)
+        index = hash % self._capacity
+        new_index = index
+        quadratic_factor = 1
+
+        data_at_index = self._buckets.get_at_index(index)
+
+        while data_at_index and data_at_index.key != key:
+            new_index = (index + quadratic_factor**2) % self._capacity
+            quadratic_factor += 1
+            data_at_index = self._buckets.get_at_index(new_index)
+
+        if data_at_index:
+            data_at_index.is_tombstone = True
+            self._size -= 1
 
     def clear(self) -> None:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        new_map = HashMap(self._capacity, self._hash_function)
+
+        self._buckets = new_map._buckets
+        self._size = 0
 
     def get_keys_and_values(self) -> DynamicArray:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        array = DynamicArray()
+        array_index = 0
+        for number in range(self._buckets.length()):
+            data_at_index = self._buckets.get_at_index(number)
+            if data_at_index and data_at_index.is_tombstone == False:
+                array.append((data_at_index.key, data_at_index.value))
+                array_index += 1
+        
+        return array
 
     def __iter__(self):
-        """
-        TODO: Write this implementation
-        """
-        pass
+        self._index = 0
+
+        return self
 
     def __next__(self):
-        """
-        TODO: Write this implementation
-        """
-        pass
+        try:
+            hash_entry = self._buckets.get_at_index(self._index)
+            while hash_entry is None or hash_entry.is_tombstone == True:
+                self._index += 1
+                hash_entry = self._buckets.get_at_index(self._index)
 
+            self._index += 1
+            return hash_entry
+            
+        except DynamicArrayException:
+            raise StopIteration
+        
 
 # ------------------- BASIC TESTING ---------------------------------------- #
 

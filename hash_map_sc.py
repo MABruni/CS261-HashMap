@@ -132,8 +132,6 @@ class HashMap:
             if self._buckets.get_at_index(number):
                 for node in self._buckets.get_at_index(number):
                     new_map.put(node.key, node.value)
-            # else:
-            #     self._buckets.append(LinkedList())
         
         self._buckets = new_map._buckets
         self._capacity = new_map._capacity
