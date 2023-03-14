@@ -89,67 +89,128 @@ class HashMap:
     # ------------------------------------------------------------------ #
 
     def put(self, key: str, value: object) -> None:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        if self.table_load() >= 1: 
+            new_capacity = self._next_prime(self._capacity * 2)
+            self.resize_table(new_capacity)
+        
+        hash = self._hash_function(key)
+        index = hash % self._capacity
+
+        sll_at_index = self._buckets.get_at_index(index)
+
+        if sll_at_index and sll_at_index.contains(key):
+            sll_at_index.contains(key).value = value
+        else:
+            sll_at_index.insert(key, value)
+            self._size += 1
 
     def empty_buckets(self) -> int:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        count = 0
+        for number in range(self._buckets.length()):
+            if self._buckets.get_at_index(number) and self._buckets.get_at_index(number).length() == 0:
+                count += 1
+        
+        return count
 
     def table_load(self) -> float:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        load_factor = float(self._size / self._capacity)
+        return load_factor
 
     def clear(self) -> None:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        new_map = HashMap(self._capacity, self._hash_function)
+
+        self._buckets = new_map._buckets
+        self._size = 0
 
     def resize_table(self, new_capacity: int) -> None:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        if new_capacity < 1:
+            return
+        
+        new_map = HashMap(new_capacity, self._hash_function)
+
+        for number in range(self._buckets.length()):
+            if self._buckets.get_at_index(number):
+                for node in self._buckets.get_at_index(number):
+                    new_map.put(node.key, node.value)
+            # else:
+            #     self._buckets.append(LinkedList())
+        
+        self._buckets = new_map._buckets
+        self._capacity = new_map._capacity
+        self._size = new_map._size
 
     def get(self, key: str):
-        """
-        TODO: Write this implementation
-        """
-        pass
+        hash = self._hash_function(key)
+        index = hash % self._capacity
+
+        if self._buckets.get_at_index(index) and self._buckets.get_at_index(index).contains(key):
+            return self._buckets.get_at_index(index).contains(key).value
+        else:
+            return None
 
     def contains_key(self, key: str) -> bool:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        if self._size == 0:
+            return False
+        
+        hash = self._hash_function(key)
+        index = hash % self._capacity
+
+        if self._buckets.get_at_index(index) and self._buckets.get_at_index(index).contains(key):
+            return True
+        else:
+            return False
+
 
     def remove(self, key: str) -> None:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        hash = self._hash_function(key)
+        index = hash % self._capacity
+
+        if self._buckets.get_at_index(index) and self._buckets.get_at_index(index).contains(key):
+            self._buckets.get_at_index(index).remove(key)
+            self._size -= 1
+
 
     def get_keys_and_values(self) -> DynamicArray:
-        """
-        TODO: Write this implementation
-        """
-        pass
+        array = DynamicArray()
+        array_index = 0
+        for number in range(self._buckets.length()):
+            sll_at_index = self._buckets.get_at_index(number)
+            if sll_at_index and sll_at_index.length() > 0:
+                for node in sll_at_index:
+                    array.append((node.key, node.value))
+                    array_index += 1
+        
+        return array
 
 
 def find_mode(da: DynamicArray) -> (DynamicArray, int):
-    """
-    TODO: Write this implementation
-    """
-    # if you'd like to use a hash map,
-    # use this instance of your Separate Chaining HashMap
     map = HashMap()
+
+    for number in range(da.length()):
+        key = da.get_at_index(number)
+
+        if map.contains_key(key):
+            value = map.get(key)
+            map.put(key, value+1)
+        
+        else:
+            map.put(key, 1)
+    
+    map_array = map.get_keys_and_values()
+
+    frequency = 0
+    mode_value = DynamicArray()
+    
+    for number in range(map_array.length()):
+        if map_array.get_at_index(number)[1] > frequency:
+            frequency = map_array.get_at_index(number)[1]
+            mode_value = DynamicArray()
+            mode_value.append(map_array.get_at_index(number)[0])
+        
+        elif map_array.get_at_index(number)[1] == frequency:
+            mode_value.append(map_array.get_at_index(number)[0])
+    
+    return (mode_value, frequency)
 
 
 # ------------------- BASIC TESTING ---------------------------------------- #
