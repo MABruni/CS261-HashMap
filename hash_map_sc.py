@@ -1,9 +1,11 @@
-# Name:
-# OSU Email:
+# Name: Miguel Angel Bruni Montero
+# OSU Email: brunimom@oregonstate.edu
 # Course: CS261 - Data Structures
-# Assignment:
-# Due Date:
-# Description:
+# Assignment: Assignment 6. Hash Map Implementation 
+# Due Date: March 17th 2023
+# Description: Exercise related to implementing a Hash Map
+# and the methods needed to work with it using separate
+# chaining for collision resolution.
 
 
 from a6_include import (DynamicArray, LinkedList,
@@ -89,15 +91,28 @@ class HashMap:
     # ------------------------------------------------------------------ #
 
     def put(self, key: str, value: object) -> None:
-        if self.table_load() >= 1: 
+        '''
+        Updates the key/value pair in the hash map. If the key is
+        already in the hash map, updates its value. If not, it adds
+        a new key/value pair.
+
+        :param key:     key to be inserted or updated.
+        :param value:   value to be associated with the key.
+        '''
+        # Resizes the hash map if the table load is 1 or higher.
+        if self.table_load() >= 1:
             new_capacity = self._next_prime(self._capacity * 2)
             self.resize_table(new_capacity)
         
+        # Calculates new index using the hash function and capacity
+        # of the hash map.
         hash = self._hash_function(key)
         index = hash % self._capacity
 
         sll_at_index = self._buckets.get_at_index(index)
 
+        # If the key is in the hash map, updates the value, 
+        # otherwise inserts the new key/value pair.
         if sll_at_index and sll_at_index.contains(key):
             sll_at_index.contains(key).value = value
         else:
@@ -105,7 +120,14 @@ class HashMap:
             self._size += 1
 
     def empty_buckets(self) -> int:
+        '''
+        Returns the number of empty buckets in the hash table.
+
+        :return:    an integer representing number of empty buckets.
+        '''
         count = 0
+
+        # Looks for buckets that have an empty linked list.
         for number in range(self._buckets.length()):
             if self._buckets.get_at_index(number) and self._buckets.get_at_index(number).length() == 0:
                 count += 1
@@ -113,64 +135,123 @@ class HashMap:
         return count
 
     def table_load(self) -> float:
+        '''
+        Returns the load factor of the hash map.
+
+        :return:    a float representing the load factor. 
+        '''
         load_factor = float(self._size / self._capacity)
         return load_factor
 
     def clear(self) -> None:
+        '''
+        Clears the contents of the hash map while maintaining 
+        the current capacity.
+        '''
+        # Creates a new empty hash map, updates the original one
+        # with empty buckets and sets size to 0.
         new_map = HashMap(self._capacity, self._hash_function)
 
         self._buckets = new_map._buckets
         self._size = 0
 
     def resize_table(self, new_capacity: int) -> None:
+        '''
+        Changes the capacity of the internal hash table. Key/value
+        pairs are maintained but hash table links are rehashed.
+
+        :param new_capacity:    new capacity for the hash map.
+        '''
         if new_capacity < 1:
             return
         
+        # Creates new hash map.
         new_map = HashMap(new_capacity, self._hash_function)
 
+        # Iterates through the buckets in the old hash map and puts
+        # them in the new one (this rehashes all hash table links).
         for number in range(self._buckets.length()):
-            if self._buckets.get_at_index(number):
+            if self._buckets.get_at_index(number) and self._buckets.get_at_index(number).length() > 0:
                 for node in self._buckets.get_at_index(number):
                     new_map.put(node.key, node.value)
         
+        # Updates the original hash map with the new values.
         self._buckets = new_map._buckets
         self._capacity = new_map._capacity
         self._size = new_map._size
 
     def get(self, key: str):
+        '''
+        Returns the value associated with the key if it exists
+        on the hash map.
+
+        :param key: key for the value we are searching for.
+        '''
+        # Calculates the index for the key we are looking for.
         hash = self._hash_function(key)
         index = hash % self._capacity
 
+        # Looks for the key in the linked list at our index, if
+        # found returns the value, else None.
         if self._buckets.get_at_index(index) and self._buckets.get_at_index(index).contains(key):
             return self._buckets.get_at_index(index).contains(key).value
         else:
             return None
 
     def contains_key(self, key: str) -> bool:
+        '''
+        Looks for the presence of the key in the hash map.
+
+        :param key: key to look for in the hash map.
+
+        :return:    True if the key is found
+                    False otherwise.
+        '''
+        # Hash map is empty.
         if self._size == 0:
             return False
         
+        # Calculates the index for the key we are looking for.
         hash = self._hash_function(key)
         index = hash % self._capacity
 
+        # Looks for the key at the index, if found returns True
+        # else, False.
         if self._buckets.get_at_index(index) and self._buckets.get_at_index(index).contains(key):
             return True
         else:
             return False
 
-
     def remove(self, key: str) -> None:
+        '''
+        Removes the given key and its value from the hash map.
+
+        :param key: key to remove from the hash map.
+        '''
+        # Calculates the index for the key we want to delete.
         hash = self._hash_function(key)
         index = hash % self._capacity
 
+        # Removes the node from the linked list and updates the size.
         if self._buckets.get_at_index(index) and self._buckets.get_at_index(index).contains(key):
             self._buckets.get_at_index(index).remove(key)
             self._size -= 1
 
-
     def get_keys_and_values(self) -> DynamicArray:
+        '''
+        Returns an array containing tuples of all key/value pairs
+        stored in the hash map.
+
+        :return:    a dynamic array with tuples of key/value pairs.
+        '''
+        # Initializes the new array and the variable to keep track
+        # of the position in it.
         array = DynamicArray()
         array_index = 0
+
+        # Iterates through the buckets of the hash map, if the
+        # linked list in the bucket contains key/value pairs, 
+        # adds them to our array.
         for number in range(self._buckets.length()):
             sll_at_index = self._buckets.get_at_index(number)
             if sll_at_index and sll_at_index.length() > 0:
@@ -180,31 +261,50 @@ class HashMap:
         
         return array
 
-
 def find_mode(da: DynamicArray) -> (DynamicArray, int):
+    '''
+    Finds the mode of a dynamic array using a hash map.
+
+    :param da:  dynamic array we want to find the mode of.
+
+    :return:    a tuple containing (a dynamic array that stores 
+    all the mode values, an integer showing the frequency).
+    '''
+    # Initializes a new hash map.
     map = HashMap()
 
+    # Iterates through values in the array passed as an argument.
     for number in range(da.length()):
         key = da.get_at_index(number)
 
+        # Looks for the array values in the hash map. If not found
+        # creates a key/value pair with the value being the 
+        # frequency of the key in the array. If found adds one
+        # to the value to update the frequency.
         if map.contains_key(key):
             value = map.get(key)
             map.put(key, value+1)
-        
         else:
             map.put(key, 1)
     
+    # Creates an array with all key/value pairs in our hash map.
     map_array = map.get_keys_and_values()
 
     frequency = 0
     mode_value = DynamicArray()
     
+    # Iterates through our map array.
     for number in range(map_array.length()):
+        # Checks the value for frequency in the tuple, if the
+        # frequency is higher than the previous value it clears the 
+        # mode_value array and updates the frequency and mode_value
+        # array.
         if map_array.get_at_index(number)[1] > frequency:
             frequency = map_array.get_at_index(number)[1]
             mode_value = DynamicArray()
             mode_value.append(map_array.get_at_index(number)[0])
-        
+        # If the frequency is the same as the previous highest, adds
+        # the new key to the mode_value array.
         elif map_array.get_at_index(number)[1] == frequency:
             mode_value.append(map_array.get_at_index(number)[0])
     

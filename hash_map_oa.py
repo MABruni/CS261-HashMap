@@ -1,9 +1,11 @@
-# Name:
-# OSU Email:
+# Name: Miguel Angel Bruni Montero
+# OSU Email: brunimom@oregonstate.edu
 # Course: CS261 - Data Structures
-# Assignment:
-# Due Date:
-# Description:
+# Assignment: Assignment 6. Hash Map Implementation 
+# Due Date: March 17th 2023
+# Description: Exercise related to implementing a Hash Map
+# and the methods needed to work with it using open addresing
+# with quadratic probing for collision resolution.
 
 from a6_include import (DynamicArray, DynamicArrayException, HashEntry,
                         hash_function_1, hash_function_2)
@@ -86,10 +88,20 @@ class HashMap:
     # ------------------------------------------------------------------ #
 
     def put(self, key: str, value: object) -> None:
+        '''
+        Updates the key/value pair in the hash map. If the key is
+        already in the hash map, updates its value. If not, it adds
+        a new key/value pair.
+
+        :param key:     key to be inserted or updated.
+        :param value:   value to be associated with the key.
+        '''
+        # Resizes the hash map if the table load is 0.5 or higher.
         if self.table_load() >= 0.5: 
             new_capacity = self._next_prime(self._capacity * 2)
             self.resize_table(new_capacity)
         
+        # Calculates initial index using the hash function.
         hash = self._hash_function(key)
         index = hash % self._capacity
         new_index = index
@@ -97,46 +109,83 @@ class HashMap:
 
         data_at_index = self._buckets.get_at_index(index)
 
+        # Iterates though the buckets in the hash map looking for 
+        # an empty bucket. If initial bucket is not empty, uses 
+        # quadratic probing for finding a new index.
         while data_at_index and (data_at_index is not None or data_at_index.is_tombstone == False):
+            # If key is already in the hash map, updates its value.
             if data_at_index.key == key:
                 data_at_index.value = value
                 return
+            # Uses quadratic probing for finding next empty bucket.
             else:
                 new_index = (index + quadratic_factor**2) % self._capacity
                 quadratic_factor += 1
                 data_at_index = self._buckets.get_at_index(new_index)
 
+        # Inserts new hash entry in the empty bucket and updates
+        # the hash map size.
         self._buckets.set_at_index(new_index, HashEntry(key, value))
         self._size += 1
 
 
     def table_load(self) -> float:
+        '''
+        Returns the load factor of the hash map.
+
+        :return:    a float representing the load factor. 
+        '''
         load_factor = float(self._size / self._capacity)
         return load_factor
 
     def empty_buckets(self) -> int:
+        '''
+        Returns the number of empty buckets in the hash table.
+
+        :return:    an integer representing number of empty buckets.
+        '''
         count = 0
+
+        # Looks for buckets that are empty or have a tombstone.
         for number in range(self._buckets.length()):
-            if self._buckets.get_at_index(number) == None:
+            if self._buckets.get_at_index(number) == None or self._buckets.get_at_index(number).is_tombstone == True:
                 count += 1
         
         return count
 
     def resize_table(self, new_capacity: int) -> None:
+        '''
+        Changes the capacity of the internal hash table. Key/value
+        pairs are maintained but hash table links are rehashed.
+
+        :param new_capacity:    new capacity for the hash map.
+        '''
         if new_capacity < self._size:
             return
-        
+
+        # Creates new hash map.
         new_map = HashMap(new_capacity, self._hash_function)
 
+        # Iterates through the buckets in the old hash map and puts
+        # them in the new one (this rehashes all hash table links).
         for number in range(self._buckets.length()):
             if self._buckets.get_at_index(number) and self._buckets.get_at_index(number).is_tombstone == False:
                 new_map.put(self._buckets.get_at_index(number).key, self._buckets.get_at_index(number).value)
-        
+
+        # Updates the original hash map with the new values.
         self._buckets = new_map._buckets
         self._capacity = new_map._capacity
         self._size = new_map._size
 
     def get(self, key: str) -> object:
+        '''
+        Returns the value associated with the key if it exists
+        on the hash map.
+
+        :param key: key for the value we are searching for.
+        '''
+        # Calculates the initial index for the key we are looking 
+        # for using the hash function.
         hash = self._hash_function(key)
         index = hash % self._capacity
         new_index = index
@@ -144,22 +193,41 @@ class HashMap:
 
         data_at_index = self._buckets.get_at_index(index)
 
+        # Looks for the key in the hash map, if found returns the 
+        # value, else None.
         while data_at_index is not None:
+            # If the key is found and it is not a tombstone, returns
+            # the value.
             if data_at_index.key == key and data_at_index.is_tombstone == False:
                 return data_at_index.value
+            # If the key is found and it is a tombstone, returns None.
             elif data_at_index.key == key and data_at_index.is_tombstone == True:
                 return None
+            # If not found, continues looking using the quadratic
+            # probing until it founds an empty bucket.
             else:
                 new_index = (index + quadratic_factor**2) % self._capacity
                 quadratic_factor += 1
                 data_at_index = self._buckets.get_at_index(new_index)
 
+        # If the while loop arrives at an empty bucket, returns None.
         return None
 
     def contains_key(self, key: str) -> bool:
+        '''
+        Looks for the presence of the key in the hash map.
+
+        :param key: key to look for in the hash map.
+
+        :return:    True if the key is found
+                    False otherwise.
+        '''
+        # Hash map is empty.
         if self._size == 0:
             return False
-        
+
+        # Calculates the initial index for the key we are looking 
+        # for using the hash function.
         hash = self._hash_function(key)
         index = hash % self._capacity
         new_index = index
@@ -167,9 +235,17 @@ class HashMap:
 
         data_at_index = self._buckets.get_at_index(index)
 
+        # Looks for the key in the hash map.
         while data_at_index is not None:
+            # If the key is found and it is not a tombstone, returns
+            # True.
             if data_at_index.key == key and data_at_index.is_tombstone == False:
                 return True
+            # If the key is found and it is a tombstone, returns False.
+            elif data_at_index.key == key and data_at_index.is_tombstone == True:
+                return False
+            # If not found, continues looking using the quadratic
+            # probing until it founds an empty bucket.
             else:
                 new_index = (index + quadratic_factor**2) % self._capacity
                 quadratic_factor += 1
@@ -178,6 +254,13 @@ class HashMap:
         return False
 
     def remove(self, key: str) -> None:
+        '''
+        Removes the given key and its value from the hash map.
+
+        :param key: key to remove from the hash map.
+        '''
+        # Calculates the initial index for the key we are looking 
+        # for using the hash function.
         hash = self._hash_function(key)
         index = hash % self._capacity
         new_index = index
@@ -185,26 +268,48 @@ class HashMap:
 
         data_at_index = self._buckets.get_at_index(index)
 
+        # Looks for the key in the hash map using the quadratic
+        # probing.
         while data_at_index and data_at_index.key != key:
             new_index = (index + quadratic_factor**2) % self._capacity
             quadratic_factor += 1
             data_at_index = self._buckets.get_at_index(new_index)
 
+        # If the bucket with the key is found, sets the tombstone
+        # value as True and updates size.
         if data_at_index:
             data_at_index.is_tombstone = True
             self._size -= 1
 
     def clear(self) -> None:
+        '''
+        Clears the contents of the hash map while maintaining 
+        the current capacity.
+        '''
+        # Creates a new empty hash map, updates the original one
+        # with empty buckets and sets size to 0.
         new_map = HashMap(self._capacity, self._hash_function)
 
         self._buckets = new_map._buckets
         self._size = 0
 
     def get_keys_and_values(self) -> DynamicArray:
+        '''
+        Returns an array containing tuples of all key/value pairs
+        stored in the hash map.
+
+        :return:    a dynamic array with tuples of key/value pairs.
+        '''
+        # Initializes the new array and the variable to keep track
+        # of the position in it.
         array = DynamicArray()
         array_index = 0
+
+        # Iterates through the buckets of the hash map. 
         for number in range(self._buckets.length()):
             data_at_index = self._buckets.get_at_index(number)
+            # If there is an entry in the bucket and does not have
+            # a tombstone, adds the key/value pair to our array.      
             if data_at_index and data_at_index.is_tombstone == False:
                 array.append((data_at_index.key, data_at_index.value))
                 array_index += 1
@@ -212,11 +317,17 @@ class HashMap:
         return array
 
     def __iter__(self):
+        '''
+        Returns the iterator.
+        '''
         self._index = 0
 
         return self
 
     def __next__(self):
+        '''
+        Return next hash entry and advances the iterator.
+        '''
         try:
             hash_entry = self._buckets.get_at_index(self._index)
             while hash_entry is None or hash_entry.is_tombstone == True:
