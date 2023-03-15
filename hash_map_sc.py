@@ -101,8 +101,12 @@ class HashMap:
         '''
         # Resizes the hash map if the table load is 1 or higher.
         if self.table_load() >= 1:
-            new_capacity = self._next_prime(self._capacity * 2)
-            self.resize_table(new_capacity)
+            new_capacity = self._capacity * 2
+            if self._is_prime(new_capacity):
+                self.resize_table(new_capacity)
+            else:
+                new_capacity = self._next_prime(new_capacity)
+                self.resize_table(new_capacity)
         
         # Calculates new index using the hash function and capacity
         # of the hash map.
@@ -148,11 +152,11 @@ class HashMap:
         Clears the contents of the hash map while maintaining 
         the current capacity.
         '''
-        # Creates a new empty hash map, updates the original one
-        # with empty buckets and sets size to 0.
-        new_map = HashMap(self._capacity, self._hash_function)
-
-        self._buckets = new_map._buckets
+        # Creates a new empty array and populates it with empty
+        # linked lists.
+        self._buckets = DynamicArray()
+        for _ in range(self._capacity):
+            self._buckets.append(LinkedList())
         self._size = 0
 
     def resize_table(self, new_capacity: int) -> None:
@@ -165,20 +169,23 @@ class HashMap:
         if new_capacity < 1:
             return
         
-        # Creates new hash map.
-        new_map = HashMap(new_capacity, self._hash_function)
+        if not self._is_prime(new_capacity):
+            new_capacity = self._next_prime(new_capacity)
+
+        # Initializes a variable to store original buckets, changes
+        # the capacity to the new one and clears the hash map.            
+        temp_buckets = self._buckets
+        self._capacity = new_capacity
+        self.clear()
 
         # Iterates through the buckets in the old hash map and puts
-        # them in the new one (this rehashes all hash table links).
-        for number in range(self._buckets.length()):
-            if self._buckets.get_at_index(number) and self._buckets.get_at_index(number).length() > 0:
-                for node in self._buckets.get_at_index(number):
-                    new_map.put(node.key, node.value)
+        # them back (this rehashes all hash table links with the new
+        # capacity).
+        for number in range(temp_buckets.length()):
+            if temp_buckets.get_at_index(number) and temp_buckets.get_at_index(number).length() > 0:
+                for node in temp_buckets.get_at_index(number):
+                    self.put(node.key, node.value)
         
-        # Updates the original hash map with the new values.
-        self._buckets = new_map._buckets
-        self._capacity = new_map._capacity
-        self._size = new_map._size
 
     def get(self, key: str):
         '''

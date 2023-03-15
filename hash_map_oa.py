@@ -112,10 +112,17 @@ class HashMap:
         # Iterates though the buckets in the hash map looking for 
         # an empty bucket. If initial bucket is not empty, uses 
         # quadratic probing for finding a new index.
-        while data_at_index and (data_at_index is not None or data_at_index.is_tombstone == False):
+        while data_at_index is not None:
             # If key is already in the hash map, updates its value.
-            if data_at_index.key == key:
+            if data_at_index.key == key and data_at_index.is_tombstone == False:
                 data_at_index.value = value
+                return
+            # If key is in the hash map but it is a tombstone, 
+            # updates value and size and changes the flag to False.
+            elif data_at_index.key == key and data_at_index.is_tombstone == True:
+                data_at_index.value = value
+                data_at_index.is_tombstone = False
+                self._size += 1
                 return
             # Uses quadratic probing for finding next empty bucket.
             else:
@@ -163,19 +170,20 @@ class HashMap:
         if new_capacity < self._size:
             return
 
-        # Creates new hash map.
-        new_map = HashMap(new_capacity, self._hash_function)
+        if not self._is_prime(new_capacity):
+            new_capacity = self._next_prime(new_capacity)
+
+        # Initializes a variable to store original buckets, changes
+        # the capacity to the new one and clears the hash map.            
+        temp_buckets = self._buckets
+        self._capacity = new_capacity
+        self.clear()
 
         # Iterates through the buckets in the old hash map and puts
         # them in the new one (this rehashes all hash table links).
-        for number in range(self._buckets.length()):
-            if self._buckets.get_at_index(number) and self._buckets.get_at_index(number).is_tombstone == False:
-                new_map.put(self._buckets.get_at_index(number).key, self._buckets.get_at_index(number).value)
-
-        # Updates the original hash map with the new values.
-        self._buckets = new_map._buckets
-        self._capacity = new_map._capacity
-        self._size = new_map._size
+        for number in range(temp_buckets.length()):
+            if temp_buckets.get_at_index(number) and temp_buckets.get_at_index(number).is_tombstone == False:
+                self.put(temp_buckets.get_at_index(number).key, temp_buckets.get_at_index(number).value)
 
     def get(self, key: str) -> object:
         '''
@@ -277,7 +285,7 @@ class HashMap:
 
         # If the bucket with the key is found, sets the tombstone
         # value as True and updates size.
-        if data_at_index:
+        if data_at_index and data_at_index.is_tombstone == False:
             data_at_index.is_tombstone = True
             self._size -= 1
 
@@ -286,11 +294,10 @@ class HashMap:
         Clears the contents of the hash map while maintaining 
         the current capacity.
         '''
-        # Creates a new empty hash map, updates the original one
-        # with empty buckets and sets size to 0.
-        new_map = HashMap(self._capacity, self._hash_function)
-
-        self._buckets = new_map._buckets
+        # Creates a new empty array with as many buckets as capacity.
+        self._buckets = DynamicArray()
+        for _ in range(self._capacity):
+            self._buckets.append(None)
         self._size = 0
 
     def get_keys_and_values(self) -> DynamicArray:
